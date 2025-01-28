@@ -1,6 +1,6 @@
 import openai
 from telegram import Update, InputFile
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import logging
 from fpdf import FPDF
 import os
@@ -30,10 +30,10 @@ def send_log_to_owner(context: CallbackContext, log_message: str):
         logger.error(f"Failed to send log to owner: {e}")
 
 # Handle image generation with DALL·E
-def generate_image(update: Update, context: CallbackContext):
+async def generate_image(update: Update, context: CallbackContext):
     query = " ".join(context.args)
     if not query:
-        update.message.reply_text("Please provide a description. Example: /generate_image a sunset over the ocean")
+        await update.message.reply_text("Please provide a description. Example: /generate_image a sunset over the ocean")
         return
 
     try:
@@ -43,18 +43,18 @@ def generate_image(update: Update, context: CallbackContext):
             size="1024x1024",
         )
         image_url = response['data'][0]['url']
-        update.message.reply_text(f"Here is your generated image: {image_url}")
+        await update.message.reply_text(f"Here is your generated image: {image_url}")
         log_message = f"Image generated for user {update.message.chat_id}: {query} -> {image_url}"
         send_log_to_owner(context, log_message)
     except Exception as e:
-        update.message.reply_text(f"Error generating image: {str(e)}")
+        await update.message.reply_text(f"Error generating image: {str(e)}")
         send_log_to_owner(context, f"Error generating image for user {update.message.chat_id}: {str(e)}")
 
 # Handle document generation
-def generate_document(update: Update, context: CallbackContext):
+async def generate_document(update: Update, context: CallbackContext):
     doc_type = " ".join(context.args)
     if not doc_type:
-        update.message.reply_text("Please specify the document type. Example: /generate_document resume")
+        await update.message.reply_text("Please specify the document type. Example: /generate_document resume")
         return
 
     try:
@@ -71,16 +71,16 @@ def generate_document(update: Update, context: CallbackContext):
         pdf.output(file_path)
 
         # Send the document to the user
-        update.message.reply_document(document=open(file_path, "rb"))
+        await update.message.reply_document(document=open(file_path, "rb"))
         os.remove(file_path)  # Cleanup after sending
         log_message = f"Document '{doc_type}' generated for user {update.message.chat_id}"
         send_log_to_owner(context, log_message)
     except Exception as e:
-        update.message.reply_text(f"Error generating document: {str(e)}")
+        await update.message.reply_text(f"Error generating document: {str(e)}")
         send_log_to_owner(context, f"Error generating document for user {update.message.chat_id}: {str(e)}")
 
 # Handle text conversations
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: CallbackContext):
     user_id = update.message.chat_id
     user_message = update.message.text
 
@@ -103,26 +103,26 @@ def handle_message(update: Update, context: CallbackContext):
         user_contexts[user_id].append({"role": "assistant", "content": bot_reply})
 
         # Send reply to user
-        update.message.reply_text(bot_reply)
+        await update.message.reply_text(bot_reply)
 
         # Log the conversation
         log_message = f"User {user_id}:\n{user_message}\nBot:\n{bot_reply}"
         send_log_to_owner(context, log_message)
     except Exception as e:
         error_message = f"Error: {str(e)}"
-        update.message.reply_text(error_message)
+        await update.message.reply_text(error_message)
         send_log_to_owner(context, f"Error handling message for user {user_id}: {error_message}")
 
 # Command handlers
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text(
+async def start(update: Update, context: CallbackContext):
+    await update.message.reply_text(
         "Hi! I'm your AI-powered bot. 🤖\n\n"
         "I can chat, generate images, create documents, and more.\n"
         "Use /help to see available commands!"
     )
 
-def help_command(update: Update, context: CallbackContext):
-    update.message.reply_text(
+async def help_command(update: Update, context: CallbackContext):
+    await update.message.reply_text(
         "📋 *Help Menu*\n\n"
         "Commands:\n"
         "/start - Start the bot\n"
@@ -133,24 +133,21 @@ def help_command(update: Update, context: CallbackContext):
     )
 
 # Main function
-def main():
-    updater = Updater(TELEGRAM_BOT_TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+async def main():
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     # Command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("generate_image", generate_image))
-    dispatcher.add_handler(CommandHandler("generate_document", generate_document))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("generate_image", generate_image))
+    application.add_handler(CommandHandler("generate_document", generate_document))
 
     # Message handler for text
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Start the bot
-    updater.start_polling()
-    logger.info("Bot is running...")
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == "__main__":
-    main()
-    
+    import asyncio
+    asyncio.run(main())

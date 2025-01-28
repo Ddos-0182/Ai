@@ -4,6 +4,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import logging
 from fpdf import FPDF
 import os
+import asyncio
+import sys
 
 # Set API keys and owner ID
 OPENAI_API_KEY = "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"
@@ -148,6 +150,17 @@ async def main():
     # Start the bot
     await application.run_polling()
 
+# Fix for running in an environment with an already running event loop (e.g., Jupyter Notebooks)
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    import sys
+
+    if sys.platform.startswith('win') or sys.platform == "linux":
+        try:
+            asyncio.run(main())
+        except RuntimeError:  # This catches the "already running" issue
+            loop = asyncio.get_event_loop()
+            loop.create_task(main())
+            loop.run_forever()
+    else:
+        asyncio.run(main())
+        

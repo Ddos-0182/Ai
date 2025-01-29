@@ -7,7 +7,7 @@ import logging
 import os
 
 # Set your API keys and owner details
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 TELEGRAM_BOT_TOKEN = "7694445973:AAHsBQyfItoJxHks6bOsOXmjcXCGPwVtR-8"
 OWNER_USER_ID = "7083378335"
 

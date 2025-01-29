@@ -109,14 +109,14 @@ async def main():
 
     await application.run_polling()
 
-# **Fix for the event loop issue**
+# ✅ **Properly Handling Event Loop Issues**
 def run_bot():
+    loop = asyncio.get_event_loop()
     try:
-        asyncio.run(main())
-    except RuntimeError:  # Handle 'event loop is already running' error
-        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
+    except RuntimeError:  # Handles "RuntimeError: This event loop is already running"
+        logger.warning("Event loop is already running. Using create_task() instead.")
         loop.create_task(main())
-        loop.run_forever()
 
 if __name__ == "__main__":
     run_bot()

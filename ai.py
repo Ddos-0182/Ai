@@ -107,16 +107,22 @@ async def main():
     application.add_handler(CommandHandler("generate_document", generate_document))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    await application.run_polling()
-
-# ✅ **Properly Handling Event Loop Issues**
-def run_bot():
-    loop = asyncio.get_event_loop()
+    # ✅ This prevents "coroutine was never awaited" errors
     try:
-        loop.run_until_complete(main())
-    except RuntimeError:  # Handles "RuntimeError: This event loop is already running"
-        logger.warning("Event loop is already running. Using create_task() instead.")
-        loop.create_task(main())
+        await application.initialize()
+        await application.run_polling()
+    finally:
+        await application.shutdown()
+
+# ✅ **Final Fix for Event Loop Issues**
+def run_bot():
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    loop.run_until_complete(main())
 
 if __name__ == "__main__":
     run_bot()

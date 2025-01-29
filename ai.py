@@ -12,7 +12,7 @@ TELEGRAM_BOT_TOKEN = "7694445973:AAHsBQyfItoJxHks6bOsOXmjcXCGPwVtR-8"
 OWNER_USER_ID = "7083378335"
 
 # Configure OpenAI
-openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Logging setup
 logging.basicConfig(
@@ -44,12 +44,12 @@ async def handle_message(update: Update, context: CallbackContext):
     user_contexts[user_id].append({"role": "user", "content": user_message})
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        response = await client.chat.completions.create(
+            model="gpt-4",  # Use "gpt-4" or "gpt-3.5-turbo"
             messages=user_contexts[user_id],
             max_tokens=200
         )
-        reply = response["choices"][0]["message"]["content"]
+        reply = response.choices[0].message.content
         user_contexts[user_id].append({"role": "assistant", "content": reply})
         await update.message.reply_text(reply)
     except Exception as e:
@@ -62,8 +62,13 @@ async def generate_image(update: Update, context: CallbackContext):
         return
 
     try:
-        response = openai.Image.create(prompt=prompt, n=1, size="1024x1024")
-        image_url = response['data'][0]['url']
+        response = await client.images.generate(
+            model="dall-e-3",  # Use DALL·E 3 for better images
+            prompt=prompt,
+            size="1024x1024",
+            n=1
+        )
+        image_url = response.data[0].url
         await update.message.reply_text(f"Here is your image: {image_url}")
     except Exception as e:
         await update.message.reply_text(f"Error: {e}")

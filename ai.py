@@ -291,7 +291,7 @@ def handle_attack(message):
             port = int(command[2])  # Convert port to integer
             time = int(command[3])  # Convert time to integer
 
-            if time > 240:
+            if time > 60:
                 response = "Error: Time interval must be less than 240"
             else:
                 attack_running = True  # Set the attack state to running
